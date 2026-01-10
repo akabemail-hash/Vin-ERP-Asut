@@ -1,0 +1,358 @@
+
+-- 1. Enable UUID extension
+create extension if not exists "uuid-ossp";
+
+-- 2. Drop existing tables to ensure a clean slate (Order matters due to foreign keys)
+drop table if exists transfer_items cascade;
+drop table if exists transfer_documents cascade;
+drop table if exists leave_requests cascade;
+drop table if exists employees cascade;
+drop table if exists transaction_logs cascade;
+drop table if exists cash_registers cascade;
+drop table if exists expense_categories cascade;
+drop table if exists bank_accounts cascade;
+drop table if exists invoice_items cascade;
+drop table if exists invoices cascade;
+drop table if exists suppliers cascade;
+drop table if exists customers cascade;
+drop table if exists product_stocks cascade;
+drop table if exists products cascade;
+drop table if exists units cascade;
+drop table if exists brands cascade;
+drop table if exists categories cascade;
+drop table if exists locations cascade;
+drop table if exists app_users cascade;
+drop table if exists roles cascade;
+drop table if exists accounts cascade;
+drop table if exists settings cascade;
+
+-- 3. Create Tables
+
+-- SETTINGS
+create table settings (
+  id uuid primary key default uuid_generate_v4(),
+  company_name text,
+  company_voen text,
+  company_phone text,
+  company_logo text,
+  currency text default '$',
+  theme_color text default 'blue',
+  base_font_size int default 14,
+  allow_negative_stock boolean default true,
+  kassa_config jsonb default '{"ip": "", "selectedBrand": ""}'::jsonb,
+  default_bank_id text
+);
+
+-- ROLES
+create table roles (
+  id text primary key, -- Using text IDs to match frontend 'admin_role'
+  name text not null,
+  permissions text[] default '{}'
+);
+
+-- USERS
+create table app_users (
+  id text primary key,
+  username text unique not null,
+  password text not null, -- In production, use pgcrypto for hashing
+  first_name text,
+  last_name text,
+  phone text,
+  role_id text references roles(id),
+  allowed_store_ids text[] default '{}',
+  allowed_warehouse_ids text[] default '{}',
+  assigned_cash_register_id text,
+  created_at timestamptz default now()
+);
+
+-- LOCATIONS
+create table locations (
+  id text primary key,
+  name text not null,
+  type text check (type in ('WAREHOUSE', 'STORE')),
+  linked_warehouse_ids text[] default '{}'
+);
+
+-- CATEGORIES
+create table categories (
+  id text primary key,
+  name text not null
+);
+
+-- BRANDS
+create table brands (
+  id text primary key,
+  name text not null
+);
+
+-- UNITS
+create table units (
+  id text primary key,
+  name text not null,
+  short_name text
+);
+
+-- PRODUCTS
+create table products (
+  id text primary key,
+  code text,
+  barcode text,
+  name text not null,
+  brand_id text references brands(id),
+  category_id text references categories(id),
+  unit_id text references units(id),
+  sales_price numeric default 0,
+  purchase_price numeric default 0,
+  vat_rate numeric default 0,
+  vat_included boolean default true,
+  image text,
+  stock numeric default 0,
+  created_at timestamptz default now()
+);
+
+-- PRODUCT STOCKS (Multi-location stock)
+create table product_stocks (
+  id uuid primary key default uuid_generate_v4(),
+  product_id text references products(id) on delete cascade,
+  location_id text references locations(id) on delete cascade,
+  quantity numeric default 0,
+  unique(product_id, location_id)
+);
+
+-- CUSTOMERS
+create table customers (
+  id text primary key,
+  name text not null,
+  type text default 'individual',
+  discount_rate numeric default 0,
+  balance numeric default 0,
+  phone text,
+  email text,
+  address text,
+  due_day int default 0
+);
+
+-- SUPPLIERS
+create table suppliers (
+  id text primary key,
+  name text not null,
+  contact_person text,
+  balance numeric default 0,
+  phone text,
+  email text,
+  address text
+);
+
+-- BANK ACCOUNTS
+create table bank_accounts (
+  id text primary key,
+  name text not null,
+  account_number text,
+  iban text,
+  currency text default '$',
+  initial_balance numeric default 0
+);
+
+-- CASH REGISTERS
+create table cash_registers (
+  id text primary key,
+  name text not null,
+  store_id text references locations(id),
+  ip_address text,
+  brand text
+);
+
+-- INVOICES
+create table invoices (
+  id text primary key,
+  type text check (type in ('SALE', 'PURCHASE', 'SALE_RETURN', 'PURCHASE_RETURN')),
+  partner_id text,
+  partner_name text,
+  date timestamptz default now(),
+  subtotal numeric default 0,
+  tax numeric default 0,
+  discount numeric default 0,
+  total numeric default 0,
+  paid_amount numeric default 0,
+  payment_method text,
+  bank_id text references bank_accounts(id),
+  location_id text references locations(id),
+  status text default 'PAID',
+  parent_invoice_id text,
+  notes text,
+  cash_amount numeric,
+  card_amount numeric,
+  tendered_amount numeric,
+  change_amount numeric,
+  fiscal_document_id text,
+  fiscal_short_document_id text,
+  created_at timestamptz default now()
+);
+
+-- INVOICE ITEMS
+create table invoice_items (
+  id uuid primary key default uuid_generate_v4(),
+  invoice_id text references invoices(id) on delete cascade,
+  product_id text references products(id),
+  product_name text,
+  quantity numeric not null,
+  price numeric not null,
+  total numeric not null,
+  returned_quantity numeric default 0
+);
+
+-- EXPENSE CATEGORIES
+create table expense_categories (
+  id text primary key,
+  name text not null
+);
+
+-- TRANSACTION LOGS
+create table transaction_logs (
+  id text primary key,
+  date timestamptz default now(),
+  type text check (type in ('INCOME', 'EXPENSE')),
+  category text,
+  expense_category_id text references expense_categories(id),
+  related_invoice_id text, -- Flexible link
+  partner_id text, -- Flexible link
+  amount numeric not null,
+  description text,
+  source text check (source in ('CASH_REGISTER', 'BANK')),
+  bank_id text references bank_accounts(id),
+  cash_register_id text references cash_registers(id),
+  user_name text
+);
+
+-- EMPLOYEES
+create table employees (
+  id text primary key,
+  first_name text not null,
+  last_name text not null,
+  phone text,
+  email text,
+  job_title text,
+  salary numeric default 0,
+  description text,
+  join_date date,
+  is_active boolean default true
+);
+
+-- LEAVE REQUESTS
+create table leave_requests (
+  id text primary key,
+  employee_id text references employees(id),
+  type text,
+  start_date date,
+  end_date date,
+  reason text,
+  status text default 'PENDING'
+);
+
+-- ACCOUNTS (Chart of Accounts)
+create table accounts (
+  id text primary key,
+  code text not null,
+  name text not null,
+  level int default 1,
+  parent_id text references accounts(id),
+  system_link text default 'NONE',
+  system_link_id text,
+  manual_balance numeric default 0
+);
+
+-- TRANSFER DOCUMENTS
+create table transfer_documents (
+  id text primary key,
+  date timestamptz default now(),
+  source_location_id text references locations(id),
+  target_location_id text references locations(id),
+  note text
+);
+
+create table transfer_items (
+  id uuid primary key default uuid_generate_v4(),
+  transfer_id text references transfer_documents(id) on delete cascade,
+  product_id text references products(id),
+  product_name text,
+  quantity numeric not null
+);
+
+-- 4. Enable RLS (Allow All for simplicity in this generated script)
+alter table settings enable row level security; create policy "Public Access" on settings for all using (true);
+alter table roles enable row level security; create policy "Public Access" on roles for all using (true);
+alter table app_users enable row level security; create policy "Public Access" on app_users for all using (true);
+alter table locations enable row level security; create policy "Public Access" on locations for all using (true);
+alter table categories enable row level security; create policy "Public Access" on categories for all using (true);
+alter table brands enable row level security; create policy "Public Access" on brands for all using (true);
+alter table units enable row level security; create policy "Public Access" on units for all using (true);
+alter table products enable row level security; create policy "Public Access" on products for all using (true);
+alter table product_stocks enable row level security; create policy "Public Access" on product_stocks for all using (true);
+alter table customers enable row level security; create policy "Public Access" on customers for all using (true);
+alter table suppliers enable row level security; create policy "Public Access" on suppliers for all using (true);
+alter table bank_accounts enable row level security; create policy "Public Access" on bank_accounts for all using (true);
+alter table cash_registers enable row level security; create policy "Public Access" on cash_registers for all using (true);
+alter table invoices enable row level security; create policy "Public Access" on invoices for all using (true);
+alter table invoice_items enable row level security; create policy "Public Access" on invoice_items for all using (true);
+alter table expense_categories enable row level security; create policy "Public Access" on expense_categories for all using (true);
+alter table transaction_logs enable row level security; create policy "Public Access" on transaction_logs for all using (true);
+alter table employees enable row level security; create policy "Public Access" on employees for all using (true);
+alter table leave_requests enable row level security; create policy "Public Access" on leave_requests for all using (true);
+alter table accounts enable row level security; create policy "Public Access" on accounts for all using (true);
+alter table transfer_documents enable row level security; create policy "Public Access" on transfer_documents for all using (true);
+alter table transfer_items enable row level security; create policy "Public Access" on transfer_items for all using (true);
+
+-- 5. Seed Data
+
+-- Settings
+INSERT INTO settings (id, company_name, currency) VALUES ('00000', 'VinERP Demo', '$');
+
+-- Roles
+INSERT INTO roles (id, name, permissions) VALUES
+('admin_role', 'Admin', '{view_dashboard,view_pos,view_pos_returns,view_products,view_sales,view_purchases,view_returns,view_finance,view_accounting,view_transfer,view_hr,view_partners,view_reports,view_admin,manage_users}'),
+('cashier_role', 'Cashier', '{view_dashboard,view_pos,view_sales,view_reports}');
+
+-- Users
+INSERT INTO app_users (id, username, password, first_name, last_name, role_id) VALUES
+('u-1', 'admin', '1234', 'Admin', 'User', 'admin_role'),
+('u-2', 'staff', '1234', 'John', 'Doe', 'cashier_role');
+
+-- Locations
+INSERT INTO locations (id, name, type) VALUES 
+('loc-1', 'Main Warehouse', 'WAREHOUSE'),
+('loc-2', 'Store Center', 'STORE');
+
+-- Categories
+INSERT INTO categories (id, name) VALUES ('cat-1', 'Electronics'), ('cat-2', 'Groceries');
+
+-- Brands
+INSERT INTO brands (id, name) VALUES ('br-1', 'Sony'), ('br-2', 'Nestle');
+
+-- Units
+INSERT INTO units (id, name, short_name) VALUES ('u-1', 'Piece', 'pcs');
+
+-- Products
+INSERT INTO products (id, code, barcode, name, brand_id, category_id, unit_id, sales_price, purchase_price, stock) VALUES
+('p-1', 'P001', '123456', 'Sony TV 55"', 'br-1', 'cat-1', 'u-1', 600, 400, 10),
+('p-2', 'P002', '654321', 'Chocolate Bar', 'br-2', 'cat-2', 'u-1', 2.5, 1.5, 100);
+
+-- Product Stocks
+INSERT INTO product_stocks (product_id, location_id, quantity) VALUES
+('p-1', 'loc-1', 10),
+('p-2', 'loc-1', 50),
+('p-2', 'loc-2', 50);
+
+-- Customers
+INSERT INTO customers (id, name, type, phone) VALUES 
+('gen', 'General Customer', 'general', ''),
+('cust-1', 'Alice Smith', 'individual', '555-0101');
+
+-- Suppliers
+INSERT INTO suppliers (id, name, contact_person) VALUES ('sup-1', 'Global Tech Ltd', 'Mr. Smith');
+
+-- Banks
+INSERT INTO bank_accounts (id, name, account_number, currency, initial_balance) VALUES ('bnk-1', 'Main Bank', 'AZ123456', '$', 5000);
+
+-- Expense Categories
+INSERT INTO expense_categories (id, name) VALUES ('exp-1', 'Rent'), ('exp-2', 'Utilities');
+
