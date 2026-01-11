@@ -361,8 +361,20 @@ INSERT INTO expense_categories (id, name) VALUES ('exp-1', 'Rent'), ('exp-2', 'U
 -- ==========================================
 -- !!! MIGRATION UPDATE !!!
 -- RUN THE FOLLOWING COMMAND IN SUPABASE SQL EDITOR 
--- TO FIX MISSING COLUMNS FOR USER PERMISSIONS
+-- TO FIX MISSING COLUMNS FOR USER PERMISSIONS AND ACCOUNTS
 -- ==========================================
 
 -- ALTER TABLE app_users ADD COLUMN IF NOT EXISTS allowed_warehouse_ids text[] default '{}';
 -- ALTER TABLE app_users ADD COLUMN IF NOT EXISTS assigned_cash_register_id text;
+
+-- CREATE TABLE IF NOT EXISTS accounts (
+--   id text primary key,
+--   code text not null,
+--   name text not null,
+--   level int default 1,
+--   parent_id text references accounts(id),
+--   system_link text default 'NONE',
+--   system_link_id text,
+--   manual_balance numeric default 0
+-- );
+-- alter table accounts enable row level security; create policy "Public Access" on accounts for all using (true);

@@ -690,12 +690,32 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
   const updateTransfer = (t: TransferDocument) => { return true; }; 
   const deleteTransfer = async (id: string) => { await supabase.from('transfer_documents').delete().eq('id', id); fetchData(); };
 
-  const addAccount = async (a: Account) => { await supabase.from('accounts').insert([{
-      id: a.id, code: a.code, name: a.name, level: a.level, parent_id: a.parentId, system_link: a.systemLink, system_link_id: a.systemLinkId, manual_balance: a.manualBalance
-  }]); fetchData(); };
-  const updateAccount = async (a: Account) => { await supabase.from('accounts').update({
-      code: a.code, name: a.name, system_link: a.systemLink, system_link_id: a.systemLinkId, manual_balance: a.manualBalance
-  }).eq('id', a.id); fetchData(); };
+  const addAccount = async (a: Account) => { 
+      const { error } = await supabase.from('accounts').insert([{
+          id: a.id, 
+          code: a.code, 
+          name: a.name, 
+          level: a.level, 
+          parent_id: a.parentId || null, 
+          system_link: a.systemLink, 
+          system_link_id: a.systemLinkId || null, 
+          manual_balance: a.manualBalance || 0
+      }]); 
+      if(error) console.error("Error adding account:", error);
+      fetchData(); 
+  };
+  
+  const updateAccount = async (a: Account) => { 
+      const { error } = await supabase.from('accounts').update({
+          code: a.code, 
+          name: a.name, 
+          system_link: a.systemLink, 
+          system_link_id: a.systemLinkId || null, 
+          manual_balance: a.manualBalance || 0
+      }).eq('id', a.id); 
+      if(error) console.error("Error updating account:", error);
+      fetchData(); 
+  };
   const deleteAccount = async (id: string) => { await supabase.from('accounts').delete().eq('id', id); fetchData(); };
 
   return (
