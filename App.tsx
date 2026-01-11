@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Layout, FlagIcon } from './components/Layout';
 import { POS } from './pages/POS';
@@ -27,6 +27,14 @@ const AppContent = () => {
   const [loading, setLoading] = useState(false);
 
   const t = (key: string) => getTranslation(language, key);
+
+  // Clear inputs when logged out
+  useEffect(() => {
+    if (!currentUser) {
+      setUsername('');
+      setPassword('');
+    }
+  }, [currentUser]);
 
   const handleLogin = async () => {
       setLoading(true);
@@ -139,6 +147,7 @@ const AppContent = () => {
                                 </div>
                                 <input 
                                     type="text" 
+                                    autoComplete="off"
                                     className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-gray-50 dark:bg-gray-700 dark:text-white transition-all"
                                     placeholder={t('enterUsername')}
                                     value={username}
@@ -158,6 +167,7 @@ const AppContent = () => {
                                 </div>
                                 <input 
                                     type="password" 
+                                    autoComplete="new-password"
                                     className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-gray-50 dark:bg-gray-700 dark:text-white transition-all"
                                     placeholder={t('enterPasswordPlaceholder')}
                                     value={password}
