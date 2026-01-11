@@ -145,8 +145,8 @@ const mapUser = (u: any): User => ({
     phone: u.phone,
     roleId: u.role_id,
     role: (u.role_id === 'admin_role' || u.role_id?.includes('admin')) ? UserRole.ADMIN : UserRole.STAFF,
-    allowedStoreIds: u.allowed_store_ids,
-    allowedWarehouseIds: u.allowed_warehouse_ids,
+    allowedStoreIds: u.allowed_store_ids || [], // Default to empty array if null
+    allowedWarehouseIds: u.allowed_warehouse_ids || [], // Default to empty array if null
     assignedCashRegisterId: u.assigned_cash_register_id
 });
 
@@ -187,7 +187,6 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data: sData } = await supabase.from('settings').select('*').single();
       if(sData) {
-          // Ensure kassaConfig exists even if DB returns null for that column
           setSettings({
               ...sData,
               kassaConfig: sData.kassa_config || { ip: '', selectedBrand: '' }
@@ -199,7 +198,6 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
 
       const { data: uData } = await supabase.from('app_users').select('*');
       if(uData) {
-          // Fix Mapping for Users
           setUsers(uData.map(mapUser));
       }
 
@@ -225,7 +223,6 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
                       stocksObj[s.location_id] = s.quantity;
                   });
               }
-              // Map DB fields to CamelCase if necessary, though product fields largely match except underscores
               return { 
                   ...p, 
                   brandId: p.brand_id,
@@ -616,8 +613,9 @@ export const StoreProvider = ({ children }: { children: ReactNode }) => {
       assigned_cash_register_id: u.assignedCashRegisterId
   }]); fetchData(); };
   const updateUser = async (u: User) => { await supabase.from('app_users').update({
-      username: u.username, password: u.password, first_name: u.firstName, last_name: u.lastName,
-      role_id: u.roleId, allowed_store_ids: u.allowedStoreIds
+      username: u.username, password: u.password, first_name: u.firstName, last_name: u.lastName, phone: u.phone,
+      role_id: u.roleId, allowed_store_ids: u.allowedStoreIds, allowed_warehouse_ids: u.allowedWarehouseIds, 
+      assigned_cash_register_id: u.assignedCashRegisterId
   }).eq('id', u.id); fetchData(); };
   const deleteUser = async (id: string) => { await supabase.from('app_users').delete().eq('id', id); fetchData(); };
 

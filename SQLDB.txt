@@ -3,6 +3,8 @@
 create extension if not exists "uuid-ossp";
 
 -- 2. Drop existing tables to ensure a clean slate (Order matters due to foreign keys)
+-- WARNING: Running this block deletes all data!
+-- Only run the drop commands if you want to reset everything.
 drop table if exists transfer_items cascade;
 drop table if exists transfer_documents cascade;
 drop table if exists leave_requests cascade;
@@ -356,3 +358,11 @@ INSERT INTO bank_accounts (id, name, account_number, currency, initial_balance) 
 -- Expense Categories
 INSERT INTO expense_categories (id, name) VALUES ('exp-1', 'Rent'), ('exp-2', 'Utilities');
 
+-- ==========================================
+-- !!! MIGRATION UPDATE !!!
+-- RUN THE FOLLOWING COMMAND IN SUPABASE SQL EDITOR 
+-- TO FIX MISSING COLUMNS FOR USER PERMISSIONS
+-- ==========================================
+
+-- ALTER TABLE app_users ADD COLUMN IF NOT EXISTS allowed_warehouse_ids text[] default '{}';
+-- ALTER TABLE app_users ADD COLUMN IF NOT EXISTS assigned_cash_register_id text;
