@@ -33,7 +33,14 @@ const AppContent = () => {
       setLoginError(false);
       const success = await login(username, password);
       setLoading(false);
-      if(!success) setLoginError(true);
+      if(success) {
+          setActivePage('dashboard');
+          // Optional: clear credentials
+          setUsername('');
+          setPassword('');
+      } else {
+          setLoginError(true);
+      }
   };
 
   // Modern Corporate Login View
