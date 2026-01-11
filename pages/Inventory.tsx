@@ -208,7 +208,19 @@ export const Inventory = () => {
       const ws = XLSX.utils.json_to_sheet(exportData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, t('products'));
-      XLSX.writeFile(wb, `${t('products')}_Export_${new Date().toISOString().slice(0,10)}.xlsx`);
+      
+      // Use Blob + Link download to work across Browser and Electron (Renderer)
+      // avoiding 'fs' module requirement of XLSX.writeFile
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/octet-stream' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${t('products')}_Export_${new Date().toISOString().slice(0,10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
   };
 
   const clearFilters = () => {
