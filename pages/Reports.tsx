@@ -12,7 +12,7 @@ export const Reports = () => {
 
   // --- PAGINATION STATE ---
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const pageSize = 10; 
 
   // --- FILTERS STATE ---
   const today = new Date().toISOString().split('T')[0];
