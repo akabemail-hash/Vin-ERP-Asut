@@ -9,7 +9,7 @@ import {
   BankAccount, ExpenseCategory,
   PaymentMethod
 } from '../types';
-
+ 
 // Initial Empty States
 const INITIAL_SETTINGS: AppSettings = {
   currency: '$',
