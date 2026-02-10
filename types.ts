@@ -18,7 +18,7 @@ export type Permission =
   | 'view_reports'
   | 'view_admin'
   | 'manage_users';
-
+ 
 export interface Role {
   id: string;
   name: string;
