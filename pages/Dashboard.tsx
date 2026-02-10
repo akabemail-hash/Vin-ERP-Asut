@@ -15,7 +15,7 @@ export const Dashboard = () => {
 
   // Mock Data for Chart
   const chartData = [
-    { name: 'Mon', sales: 400 },
+    { name: 'Mon', sales: 400 }, 
     { name: 'Tue', sales: 300 },
     { name: 'Wed', sales: 550 },
     { name: 'Thu', sales: 450 },
