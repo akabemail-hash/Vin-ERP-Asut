@@ -10,7 +10,7 @@ export const Finance = () => {
   const t = (key: string) => getTranslation(language, key);
 
   const [activeTab, setActiveTab] = useState<'cash' | 'banks'>('cash');
-  const [dateFilter, setDateFilter] = useState(new Date().toISOString().slice(0, 10)); 
+  const [dateFilter, setDateFilter] = useState(new Date().toISOString().slice(0, 10));  
   
   // Transaction Modal State
   const [isTransModalOpen, setIsTransModalOpen] = useState(false);
