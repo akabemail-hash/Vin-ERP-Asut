@@ -15,7 +15,7 @@ import { Accounting } from './pages/Accounting';
 import { HR } from './pages/HR';
 import { Reports } from './pages/Reports';
 import { Returns } from './pages/Returns';
-import { getTranslation } from './utils/i18n';
+import { getTranslation } from './utils/i18n'; 
 import { Hexagon, User, Lock, ArrowRight, ShieldCheck, Sun, Moon, ChevronDown } from 'lucide-react';
 
 const AppContent = () => {
