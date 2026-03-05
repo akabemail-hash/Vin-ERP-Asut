@@ -132,6 +132,13 @@ export const Reports = () => {
     });
   }, [products, selectedLocation]);
 
+  // STOCK TOTAL VALUE
+const totalStockValue = useMemo(() => {
+    return stockReportData.reduce((sum, p: any) => {
+        const stock = selectedLocation ? (p.stocks?.[selectedLocation] || 0) : p.stock;
+        return sum + (stock * p.purchasePrice);
+    }, 0);
+}, [stockReportData, selectedLocation]);
   // 2. INVOICE REPORTS (Sales, Purchase, Returns)
   const invoiceReportData = useMemo(() => {
      let type = '';
