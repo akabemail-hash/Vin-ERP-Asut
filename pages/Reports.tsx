@@ -185,13 +185,6 @@ export const Reports = () => {
       link.click();
       document.body.removeChild(link);
   };
-
-  const getPartnerOptions = () => {
-      if (activeTab.includes('sales')) return customers;
-      if (activeTab.includes('purchase')) return suppliers;
-      return [...customers, ...suppliers]; // For mixed context if needed
-  };
-
   // STOCK TOTAL VALUE
 const totalStockValue = useMemo(() => {
     return stockReportData.reduce((sum, p: any) => {
@@ -200,6 +193,13 @@ const totalStockValue = useMemo(() => {
     }, 0);
 }, [stockReportData, selectedLocation]);
   
+  const getPartnerOptions = () => {
+      if (activeTab.includes('sales')) return customers;
+      if (activeTab.includes('purchase')) return suppliers;
+      return [...customers, ...suppliers]; // For mixed context if needed
+  };
+
+
   const filteredPartnerOptions = getPartnerOptions().filter(p => p.name.toLowerCase().includes(partnerSearch.toLowerCase()));
 
   // Open Details Modal
