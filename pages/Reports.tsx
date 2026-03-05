@@ -192,14 +192,8 @@ const totalStockValue = useMemo(() => {
       link.click();
       document.body.removeChild(link);
   };
-  // STOCK TOTAL VALUE
-const totalStockValue = useMemo(() => {
-    return stockReportData.reduce((sum, p: any) => {
-        const stock = selectedLocation ? (p.stocks?.[selectedLocation] || 0) : p.stock;
-        return sum + (stock * p.purchasePrice);
-    }, 0);
-}, [stockReportData, selectedLocation]);
-  
+ 
+ 
   const getPartnerOptions = () => {
       if (activeTab.includes('sales')) return customers;
       if (activeTab.includes('purchase')) return suppliers;
