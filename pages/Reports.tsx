@@ -279,10 +279,12 @@ const totalStockValue = useMemo(() => {
                          <option value="">{t('allTypes')}</option>
                          {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                      </select>
-                 </div>
-       <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg text-right font-bold">
+
+                      <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg text-right font-bold">
         {t('totalStockValue')}: {settings.currency}{totalStockValue.toFixed(2)}
     </div>
+                 </div>
+    
              )}
 
              {/* Partner Filter (Invoice Reports) */}
