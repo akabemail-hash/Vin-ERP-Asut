@@ -65,6 +65,7 @@ export const translations: Record<Language, Record<string, string>> = {
     unpaid: 'Unpaid',
     successTitle: 'Success',
     errorTitle: 'Error',
+    totalStockValue: 'Total StockValue',
     
     // Import Results
     importResult: 'Import Result',
@@ -857,7 +858,7 @@ export const translations: Record<Language, Record<string, string>> = {
     xReportPrinted: 'X-Hesabat Uğurla Çap Edildi',
     connectionFailed: 'Kassa ilə əlaqə yaradılmadı. Zəhmət olmasa IP və Şəbəkəni yoxlayın.',
     operationFailed: 'Əməliyyat uğursuz oldu',
-
+    
     newProduct: 'Yeni Məhsul',
     editProduct: 'Məhsulu Düzəlt',
     productName: 'Məhsul Adı',
@@ -873,7 +874,9 @@ export const translations: Record<Language, Record<string, string>> = {
     filter: 'Filtr',
     export: 'İxrac',
     import: 'İdxal',
+  
 
+    
     supplier: 'Təchizatçı',
     addCustomer: 'Müştəri Əlavə et',
     addSupplier: 'Təchizatçı Əlavə et',
@@ -925,7 +928,7 @@ export const translations: Record<Language, Record<string, string>> = {
     itemsCount: 'Məhsul',
     transferAlert1: 'Zəhmət olmasa məkan və məhsulları seçin.',
     transferAlert2: 'Mənbə və Hədəf eyni ola bilməz.',
-
+ totalStockValue: 'Materialların ümumi dəyəri',
     cashier: 'Kassa',
     banks: 'Banklar',
     cashIn: 'Mədaxil',
