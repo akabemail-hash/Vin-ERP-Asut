@@ -192,6 +192,14 @@ export const Reports = () => {
       return [...customers, ...suppliers]; // For mixed context if needed
   };
 
+  // STOCK TOTAL VALUE
+const totalStockValue = useMemo(() => {
+    return stockReportData.reduce((sum, p: any) => {
+        const stock = selectedLocation ? (p.stocks?.[selectedLocation] || 0) : p.stock;
+        return sum + (stock * p.purchasePrice);
+    }, 0);
+}, [stockReportData, selectedLocation]);
+  
   const filteredPartnerOptions = getPartnerOptions().filter(p => p.name.toLowerCase().includes(partnerSearch.toLowerCase()));
 
   // Open Details Modal
@@ -441,6 +449,9 @@ export const Reports = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
              <div className="overflow-x-auto">
                  {activeTab === 'stock' && (
+          <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg text-right font-bold">
+        {t('totalStockValue')}: {settings.currency}{totalStockValue.toFixed(2)}
+    </div>
                      <table className="w-full text-left">
                          <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs uppercase text-gray-500 font-semibold">
                              <tr>
