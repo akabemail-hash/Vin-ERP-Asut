@@ -123,14 +123,22 @@ export const Reports = () => {
   }, [invoices, transactions, startDate, endDate, activeTab]);
 
   // 1. STOCK REPORT
-  const stockReportData = useMemo(() => {
-    return products.filter(p => {
-       if (selectedLocation) {
-           return true; 
-       }
-       return true;
-    });
-  }, [products, selectedLocation]);
+const stockReportData = useMemo(() => {
+  return products.filter(p => {
+    if (selectedLocation) {
+      return p.locationId === selectedLocation;
+    }
+    return true;
+  });
+}, [products, selectedLocation]);
+
+  const totalStockValue = useMemo(() => {
+  return stockReportData.reduce((sum, p) => {
+    const qty = p.stock || 0;
+    const cost = p.stockValueBuy || 0;
+    return sum + (qty * cost);
+  }, 0);
+}, [stockReportData]);
 
   // 2. INVOICE REPORTS (Sales, Purchase, Returns)
   const invoiceReportData = useMemo(() => {
@@ -441,6 +449,18 @@ export const Reports = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
              <div className="overflow-x-auto">
                  {activeTab === 'stock' && (
+           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex justify-between items-center">
+    <div className="flex items-center space-x-2">
+      <Package size={20} className="text-primary"/>
+      <span className="font-bold text-gray-700 dark:text-gray-200">
+        {t('totalStockValue')}
+      </span>
+    </div>
+
+    <div className="text-xl font-bold text-primary">
+      {settings.currency}{totalStockValue.toFixed(2)}
+    </div>
+  </div>
                      <table className="w-full text-left">
                          <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs uppercase text-gray-500 font-semibold">
                              <tr>
