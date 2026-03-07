@@ -3,7 +3,6 @@ import { useStore } from '../context/StoreContext';
 import { getTranslation } from '../utils/i18n';
 import { FileText, Calendar, Filter, Download, Package, Wallet, Landmark, ChevronDown, Printer, ShoppingCart, Truck, RefreshCcw, Eye, X, TrendingUp, DollarSign, TrendingDown, Activity } from 'lucide-react';
 import { Pagination } from '../components/Pagination';
-import { InvoiceSummaryItem } from '../types';
 
 export const Reports = () => {
   const { language, products, invoices, locations, transactions, customers, suppliers, settings, categories } = useStore();
@@ -14,7 +13,7 @@ export const Reports = () => {
   // --- PAGINATION STATE ---
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-const [stockSearch, setStockSearch] = useState('');
+
   // --- FILTERS STATE ---
   const today = new Date().toISOString().split('T')[0];
   const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
@@ -44,116 +43,94 @@ const [stockSearch, setStockSearch] = useState('');
   // --- DATA PROCESSING ---
 
   // 0. SUMMARY REPORT DATA
-  const summaryData: InvoiceSummaryItem = useMemo(() => {
-    if (activeTab !== 'summary') return {} as InvoiceSummaryItem;
+  const summaryData = useMemo(() => {
+      if (activeTab !== 'summary') return null;
 
-    const dateCheck = (date: string) => date >= startDate && date <= endDate + 'T23:59:59';
+      const dateCheck = (date: string) => date >= startDate && date <= endDate + 'T23:59:59';
 
-    // Sales Invoices
-    const salesInvoices = invoices.filter(i => i.type === 'SALE' && dateCheck(i.date));
-    const totalSales = salesInvoices.reduce((sum, i) => sum + i.total, 0);
+      // Sales Calculations
+      const salesInvoices = invoices.filter(i => i.type === 'SALE' && dateCheck(i.date));
+      const totalSales = salesInvoices.reduce((sum, i) => sum + i.total, 0);
+      
+      const salesCash = salesInvoices.reduce((sum, i) => {
+          if (i.paymentMethod === 'CASH') return sum + i.total;
+          if (i.paymentMethod === 'MIXED') return sum + (i.cashAmount || 0);
+          return sum;
+      }, 0);
+      
+      const salesCard = salesInvoices.reduce((sum, i) => {
+          if (i.paymentMethod === 'CARD') return sum + i.total;
+          if (i.paymentMethod === 'MIXED') return sum + (i.cardAmount || 0);
+          return sum;
+      }, 0);
 
-    const salesCash = salesInvoices.reduce((sum, i) => {
-        if (i.paymentMethod === 'CASH') return sum + i.total;
-        if (i.paymentMethod === 'MIXED') return sum + (i.cashAmount || 0);
-        return sum;
-    }, 0);
+      const salesCredit = salesInvoices.reduce((sum, i) => {
+          if (i.paymentMethod === 'CREDIT') return sum + i.total;
+          return sum;
+      }, 0);
 
-    const salesCard = salesInvoices.reduce((sum, i) => {
-        if (i.paymentMethod === 'CARD') return sum + i.total;
-        if (i.paymentMethod === 'MIXED') return sum + (i.cardAmount || 0);
-        return sum;
-    }, 0);
+      // Sales Returns
+      const salesReturnInvoices = invoices.filter(i => i.type === 'SALE_RETURN' && dateCheck(i.date));
+      const totalSalesReturn = salesReturnInvoices.reduce((sum, i) => sum + i.total, 0);
 
-    const salesCredit = salesInvoices.reduce((sum, i) => {
-        if (i.paymentMethod === 'CREDIT') return sum + i.total;
-        return sum;
-    }, 0);
+      // Purchase Calculations
+      const purchaseInvoices = invoices.filter(i => i.type === 'PURCHASE' && dateCheck(i.date));
+      const totalPurchases = purchaseInvoices.reduce((sum, i) => sum + i.total, 0);
 
-    // SALES COST
-    const salesCost = salesInvoices.reduce((sum, invoice) => {
-        return sum + invoice.items.reduce((s, item) => s + (item.purchasePrice || 0) * item.quantity, 0);
-    }, 0);
+      const purchCash = purchaseInvoices.reduce((sum, i) => {
+          if (i.paymentMethod === 'CASH') return sum + i.total;
+          if (i.paymentMethod === 'MIXED') return sum + (i.cashAmount || 0);
+          return sum;
+      }, 0);
 
-    // Sales Returns
-    const salesReturnInvoices = invoices.filter(i => i.type === 'SALE_RETURN' && dateCheck(i.date));
-    const totalSalesReturn = salesReturnInvoices.reduce((sum, i) => sum + i.total, 0);
-    const salesReturnCost = salesReturnInvoices.reduce((sum, invoice) => {
-        return sum + invoice.items.reduce((s, item) => s + (item.purchasePrice || 0) * item.quantity, 0);
-    }, 0);
+      const purchCard = purchaseInvoices.reduce((sum, i) => {
+          if (i.paymentMethod === 'CARD') return sum + i.total;
+          if (i.paymentMethod === 'MIXED') return sum + (i.cardAmount || 0);
+          return sum;
+      }, 0);
 
-    // Purchases
-    const purchaseInvoices = invoices.filter(i => i.type === 'PURCHASE' && dateCheck(i.date));
-    const totalPurchases = purchaseInvoices.reduce((sum, i) => sum + i.total, 0);
+      const purchCredit = purchaseInvoices.reduce((sum, i) => {
+          if (i.paymentMethod === 'CREDIT') return sum + i.total;
+          return sum;
+      }, 0);
 
-    const purchCash = purchaseInvoices.reduce((sum, i) => {
-        if (i.paymentMethod === 'CASH') return sum + i.total;
-        if (i.paymentMethod === 'MIXED') return sum + (i.cashAmount || 0);
-        return sum;
-    }, 0);
+      // Purchase Returns
+      const purchReturnInvoices = invoices.filter(i => i.type === 'PURCHASE_RETURN' && dateCheck(i.date));
+      const totalPurchReturn = purchReturnInvoices.reduce((sum, i) => sum + i.total, 0);
 
-    const purchCard = purchaseInvoices.reduce((sum, i) => {
-        if (i.paymentMethod === 'CARD') return sum + i.total;
-        if (i.paymentMethod === 'MIXED') return sum + (i.cardAmount || 0);
-        return sum;
-    }, 0);
+      // Cash Register Expenses (Not tied to invoices, e.g., rent, supplies)
+      const cashExpenses = transactions
+          .filter(t => t.type === 'EXPENSE' && t.source === 'CASH_REGISTER' && dateCheck(t.date) && !t.relatedInvoiceId)
+          .reduce((sum, t) => sum + t.amount, 0);
 
-    const purchCredit = purchaseInvoices.reduce((sum, i) => {
-        if (i.paymentMethod === 'CREDIT') return sum + i.total;
-        return sum;
-    }, 0);
+      // Overall Net Calculation
+      // Income = Sales - Sales Returns
+      // Expenses = Purchases - Purchase Returns + General Expenses
+      const netSales = totalSales - totalSalesReturn;
+      const netPurchases = totalPurchases - totalPurchReturn;
+      const totalExpenses = netPurchases + cashExpenses;
+      
+      const netResult = netSales - totalExpenses;
 
-    // Purchase Returns
-    const purchReturnInvoices = invoices.filter(i => i.type === 'PURCHASE_RETURN' && dateCheck(i.date));
-    const totalPurchReturn = purchReturnInvoices.reduce((sum, i) => sum + i.total, 0);
-
-    // Cash Expenses
-    const cashExpenses = transactions
-        .filter(t => t.type === 'EXPENSE' && t.source === 'CASH_REGISTER' && dateCheck(t.date) && !t.relatedInvoiceId)
-        .reduce((sum, t) => sum + t.amount, 0);
-
-    // Net Calculation
-    const netSales = totalSales - totalSalesReturn;
-    const netSalesCost = salesCost - salesReturnCost;
-    const netPurchases = totalPurchases - totalPurchReturn;
-    const totalExpenses = netPurchases + cashExpenses;
-    const netResult = netSales - totalExpenses - netSalesCost;
-
-    const grossProfit = netSales - netSalesCost;
-    const profitability = grossProfit / netSales * 100 || 0;
-
-    return {
-        totalSales,
-        salesCash,
-        salesCard,
-        salesCredit,
-        totalSalesReturn,
-        countSales: salesInvoices.length,
-        countReturns: salesReturnInvoices.length,
-        totalPurchases,
-        purchCash,
-        purchCard,
-        purchCredit,
-        totalPurchReturn,
-        countPurch: purchaseInvoices.length,
-        cashExpenses,
-        netResult,
-        netSalesCost,
-        grossProfit,
-        profitability
-    };
-}, [invoices, transactions, startDate, endDate, activeTab]);
+      return {
+          totalSales, salesCash, salesCard, salesCredit,
+          totalSalesReturn, countSales: salesInvoices.length, countReturns: salesReturnInvoices.length,
+          totalPurchases, purchCash, purchCard, purchCredit,
+          totalPurchReturn, countPurch: purchaseInvoices.length,
+          cashExpenses,
+          netResult
+      };
+  }, [invoices, transactions, startDate, endDate, activeTab]);
 
   // 1. STOCK REPORT
-const stockReportData = useMemo(() => {
+  const stockReportData = useMemo(() => {
     return products.filter(p => {
-        const locationMatch = selectedLocation ? (p.stocks?.[selectedLocation] || 0) > 0 : true;
-        const searchMatch = p.name.toLowerCase().includes(stockSearch.toLowerCase()) 
-                         || p.code.toLowerCase().includes(stockSearch.toLowerCase()) 
-                         || (p.barcode && p.barcode.toLowerCase().includes(stockSearch.toLowerCase()));
-        return locationMatch && searchMatch;
+       if (selectedLocation) {
+           return true; 
+       }
+       return true;
     });
-}, [products, selectedLocation, stockSearch]);
+  }, [products, selectedLocation]);
 
   // STOCK TOTAL VALUE
 const totalStockValue = useMemo(() => {
@@ -291,17 +268,6 @@ const totalStockValue = useMemo(() => {
              {/* Location Filter (Stock Only) */}
              {activeTab === 'stock' && (
                  <div>
-
-  <div className="flex flex-col gap-2">
-    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('search')}</label>
-    <input 
-        type="text"
-        className="border p-2 rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        placeholder={t('searchByNameCodeBarcode')}
-        value={stockSearch}
-        onChange={e => setStockSearch(e.target.value)}
-    />
-  </div>
                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('location')}</label>
                      <select className="border p-2 rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" value={selectedLocation} onChange={e => setSelectedLocation(e.target.value)}>
                          <option value="">{t('allTypes')}</option>
@@ -414,23 +380,6 @@ const totalStockValue = useMemo(() => {
                             <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{t('credit')}</p>
                             <p className="text-xl font-bold text-gray-700 dark:text-gray-200">{settings.currency}{summaryData.salesCredit.toFixed(2)}</p>
                         </div>
-
-                      {/* GROSS PROFIT SUMMARY */}
-<div className="grid grid-cols-3 gap-4 mt-6">
-    <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg text-center">
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{t('totalSales')}</p>
-        <p className="text-2xl font-bold text-gray-900 dark:text-white">{settings.currency}{summaryData.totalSales.toFixed(2)}</p>
-    </div>
-    <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg text-center">
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{t('totalCost')}</p>
-        <p className="text-2xl font-bold text-red-600 dark:text-red-400">{settings.currency}{summaryData.netSalesCost.toFixed(2)}</p>
-    </div>
-    <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg text-center">
-        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{t('grossProfit')}</p>
-        <p className="text-2xl font-bold text-green-600 dark:text-green-400">{settings.currency}{summaryData.grossProfit.toFixed(2)}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">({summaryData.profitability.toFixed(2)}%)</p>
-    </div>
-</div>
                     </div>
                 </div>
 
