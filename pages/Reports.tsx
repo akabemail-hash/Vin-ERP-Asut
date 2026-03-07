@@ -9,7 +9,7 @@ export const Reports = () => {
   const t = (key: string) => getTranslation(language, key);
 
   const [activeTab, setActiveTab] = useState<'summary' | 'stock' | 'sales' | 'purchase' | 'sales_return' | 'purchase_return' | 'cash' | 'bank'>('summary');
-
+const [stockSearch, setStockSearch] = useState('');
   // --- PAGINATION STATE ---
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -125,12 +125,16 @@ export const Reports = () => {
   // 1. STOCK REPORT
   const stockReportData = useMemo(() => {
     return products.filter(p => {
-       if (selectedLocation) {
-           return true; 
-       }
-       return true;
+        // Location filter
+        const locationMatch = selectedLocation ? (p.stocks?.[selectedLocation] || 0) > 0 : true;
+
+        // Search filter: name or barcode
+        const searchLower = stockSearch.toLowerCase();
+        const searchMatch = !stockSearch || p.name.toLowerCase().includes(searchLower) || p.code.toLowerCase().includes(searchLower);
+
+        return locationMatch && searchMatch;
     });
-  }, [products, selectedLocation]);
+}, [products, selectedLocation, stockSearch]);
 
   // STOCK TOTAL VALUE
 const totalStockValue = useMemo(() => {
@@ -268,6 +272,16 @@ const totalStockValue = useMemo(() => {
              {/* Location Filter (Stock Only) */}
              {activeTab === 'stock' && (
                  <div>
+                    <div>
+        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('searchProduct')}</label>
+        <input 
+            type="text"
+            className="border p-2 rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            placeholder={t('searchByNameOrCode')}
+            value={stockSearch}
+            onChange={e => setStockSearch(e.target.value)}
+        />
+    </div>
                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('location')}</label>
                      <select className="border p-2 rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" value={selectedLocation} onChange={e => setSelectedLocation(e.target.value)}>
                          <option value="">{t('allTypes')}</option>
