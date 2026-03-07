@@ -175,9 +175,19 @@ export interface InvoiceItem {
   price: number;
   total: number;
   returnedQuantity: number; 
-  purchasePrice: number;
+ 
 }
 
+
+export interface InvoiceSummaryItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;       // satış fiyatı
+  total: number;       // satış toplam
+  purchasePrice: number; // alış fiyatı
+  returnedQuantity: number;
+}
 export enum PaymentMethod {
   CASH = 'CASH',
   CARD = 'CARD',
