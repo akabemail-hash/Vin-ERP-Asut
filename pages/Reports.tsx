@@ -43,29 +43,8 @@ const [stockSearch, setStockSearch] = useState('');
   // --- DATA PROCESSING ---
 
   // 0. SUMMARY REPORT DATA
-  const summaryData = useMemo(() => {
-
-    const summaryItems: InvoiceSummaryItem[] = useMemo(() => {
-  if (activeTab !== 'summary') return [];
-
-  const dateCheck = (date: string) => date >= startDate && date <= endDate + 'T23:59:59';
-
-  const salesInvoices = invoices.filter(i => i.type === 'SALE' && dateCheck(i.date));
-
-  // Her invoice item'ını InvoiceItem2 gibi map ediyoruz
-  return salesInvoices.flatMap(inv =>
-    inv.items.map(item => ({
-      productId: item.productId,
-      productName: item.productName,
-      quantity: item.quantity,
-      price: item.price,
-      total: item.total,
-      returnedQuantity: item.returnedQuantity || 0,
-      purchasePrice: item.purchasePrice || 0
-    }))
-  );
-}, [invoices, startDate, endDate, activeTab]);
-    if (activeTab !== 'summary') return null;
+  const summaryData: InvoiceSummaryItem = useMemo(() => {
+    if (activeTab !== 'summary') return {} as InvoiceSummaryItem;
 
     const dateCheck = (date: string) => date >= startDate && date <= endDate + 'T23:59:59';
 
@@ -90,21 +69,16 @@ const [stockSearch, setStockSearch] = useState('');
         return sum;
     }, 0);
 
-    // SALES COST CALCULATION
+    // SALES COST
     const salesCost = salesInvoices.reduce((sum, invoice) => {
-        return sum + invoice.items.reduce((s, item) => {
-            return s + (item.quantity * (item.purchasePrice || 0));
-        }, 0);
+        return sum + invoice.items.reduce((s, item) => s + (item.purchasePrice || 0) * item.quantity, 0);
     }, 0);
 
     // Sales Returns
     const salesReturnInvoices = invoices.filter(i => i.type === 'SALE_RETURN' && dateCheck(i.date));
     const totalSalesReturn = salesReturnInvoices.reduce((sum, i) => sum + i.total, 0);
-
     const salesReturnCost = salesReturnInvoices.reduce((sum, invoice) => {
-        return sum + invoice.items.reduce((s, item) => {
-            return s + (item.quantity * (item.purchasePrice || 0));
-        }, 0);
+        return sum + invoice.items.reduce((s, item) => s + (item.purchasePrice || 0) * item.quantity, 0);
     }, 0);
 
     // Purchases
@@ -137,23 +111,30 @@ const [stockSearch, setStockSearch] = useState('');
         .filter(t => t.type === 'EXPENSE' && t.source === 'CASH_REGISTER' && dateCheck(t.date) && !t.relatedInvoiceId)
         .reduce((sum, t) => sum + t.amount, 0);
 
-    // Net Calculation (Income = Sales - Sales Return)
+    // Net Calculation
     const netSales = totalSales - totalSalesReturn;
     const netSalesCost = salesCost - salesReturnCost;
-
     const netPurchases = totalPurchases - totalPurchReturn;
     const totalExpenses = netPurchases + cashExpenses;
-
-    const netResult = netSales - totalExpenses - netSalesCost; // net profit/loss after cost
+    const netResult = netSales - totalExpenses - netSalesCost;
 
     const grossProfit = netSales - netSalesCost;
-    const profitability = grossProfit / netSales * 100 || 0; // % kar
+    const profitability = grossProfit / netSales * 100 || 0;
 
     return {
-        totalSales, salesCash, salesCard, salesCredit,
-        totalSalesReturn, countSales: salesInvoices.length, countReturns: salesReturnInvoices.length,
-        totalPurchases, purchCash, purchCard, purchCredit,
-        totalPurchReturn, countPurch: purchaseInvoices.length,
+        totalSales,
+        salesCash,
+        salesCard,
+        salesCredit,
+        totalSalesReturn,
+        countSales: salesInvoices.length,
+        countReturns: salesReturnInvoices.length,
+        totalPurchases,
+        purchCash,
+        purchCard,
+        purchCredit,
+        totalPurchReturn,
+        countPurch: purchaseInvoices.length,
         cashExpenses,
         netResult,
         netSalesCost,
