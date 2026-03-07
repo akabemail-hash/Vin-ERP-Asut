@@ -51,7 +51,29 @@ const [stockSearch, setStockSearch] = useState('');
       // Sales Calculations
       const salesInvoices = invoices.filter(i => i.type === 'SALE' && dateCheck(i.date));
       const totalSales = salesInvoices.reduce((sum, i) => sum + i.total, 0);
-      
+
+ // --- SATILAN ÜRÜNLERİN MALİYETİ (Cost of Goods Sold - COGS) ---
+    let totalCost = 0;
+    salesInvoices.forEach(inv => {
+        inv.items.forEach((item: any) => {
+            const product = products.find(p => p.id === item.productId);
+            if (!product) return;
+            
+            // Son alış fiyatı: invoice type PURCHASE veya product.purchasePrice
+            // Önce invoices içinden ürünün son alış fiyatını bul
+            const lastPurchase = invoices
+                .filter(inv => inv.type === 'PURCHASE')
+                .flatMap(inv => inv.items)
+                .filter(i => i.productId === item.productId)
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+
+            const unitCost = lastPurchase?.price || product.purchasePrice || 0;
+            totalCost += unitCost * item.quantity;
+        });
+    });
+
+
+    
       const salesCash = salesInvoices.reduce((sum, i) => {
           if (i.paymentMethod === 'CASH') return sum + i.total;
           if (i.paymentMethod === 'MIXED') return sum + (i.cashAmount || 0);
