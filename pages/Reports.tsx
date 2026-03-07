@@ -3,6 +3,7 @@ import { useStore } from '../context/StoreContext';
 import { getTranslation } from '../utils/i18n';
 import { FileText, Calendar, Filter, Download, Package, Wallet, Landmark, ChevronDown, Printer, ShoppingCart, Truck, RefreshCcw, Eye, X, TrendingUp, DollarSign, TrendingDown, Activity } from 'lucide-react';
 import { Pagination } from '../components/Pagination';
+import { InvoiceSummaryItem } from '../types';
 
 export const Reports = () => {
   const { language, products, invoices, locations, transactions, customers, suppliers, settings, categories } = useStore();
