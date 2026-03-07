@@ -13,7 +13,7 @@ export const Reports = () => {
   // --- PAGINATION STATE ---
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-
+const [stockSearch, setStockSearch] = useState('');
   // --- FILTERS STATE ---
   const today = new Date().toISOString().split('T')[0];
   const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
@@ -123,14 +123,15 @@ export const Reports = () => {
   }, [invoices, transactions, startDate, endDate, activeTab]);
 
   // 1. STOCK REPORT
-  const stockReportData = useMemo(() => {
+const stockReportData = useMemo(() => {
     return products.filter(p => {
-       if (selectedLocation) {
-           return true; 
-       }
-       return true;
+        const locationMatch = selectedLocation ? (p.stocks?.[selectedLocation] || 0) > 0 : true;
+        const searchMatch = p.name.toLowerCase().includes(stockSearch.toLowerCase()) 
+                         || p.code.toLowerCase().includes(stockSearch.toLowerCase()) 
+                         || (p.barcode && p.barcode.toLowerCase().includes(stockSearch.toLowerCase()));
+        return locationMatch && searchMatch;
     });
-  }, [products, selectedLocation]);
+}, [products, selectedLocation, stockSearch]);
 
   // STOCK TOTAL VALUE
 const totalStockValue = useMemo(() => {
@@ -268,6 +269,17 @@ const totalStockValue = useMemo(() => {
              {/* Location Filter (Stock Only) */}
              {activeTab === 'stock' && (
                  <div>
+
+  <div className="flex flex-col gap-2">
+    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('search')}</label>
+    <input 
+        type="text"
+        className="border p-2 rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        placeholder={t('searchByNameCodeBarcode')}
+        value={stockSearch}
+        onChange={e => setStockSearch(e.target.value)}
+    />
+  </div>
                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">{t('location')}</label>
                      <select className="border p-2 rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" value={selectedLocation} onChange={e => setSelectedLocation(e.target.value)}>
                          <option value="">{t('allTypes')}</option>
