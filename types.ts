@@ -188,6 +188,26 @@ export interface InvoiceSummaryItem {
   total: number;       // satış toplam
   purchasePrice: number; // alış fiyatı
   returnedQuantity: number;
+
+
+
+    totalSales: number;
+    salesCash: number;
+    salesCard: number;
+    salesCredit: number;
+    totalSalesReturn: number;
+    countSales: number;
+    countReturns: number;
+    totalPurchases: number;
+    purchCash: number;
+    purchCard: number;
+    purchCredit: number;
+    totalPurchReturn: number;
+    countPurch: number;
+    countPurchReturn: number;
+    netSalesCost: number;
+    grossProfit: number;
+    profitability: number;
 }
 export enum PaymentMethod {
   CASH = 'CASH',
