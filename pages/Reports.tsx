@@ -132,14 +132,14 @@ salesInvoices.forEach(inv => {
       const totalExpenses = netPurchases + cashExpenses;
       
       const netResult = netSales - totalExpenses;
-
+      const netmaya= netResult- totalCost;
       return {
           totalSales, salesCash, salesCard, salesCredit,
           totalSalesReturn, countSales: salesInvoices.length, countReturns: salesReturnInvoices.length,
           totalPurchases, purchCash, purchCard, purchCredit,
           totalPurchReturn, countPurch: purchaseInvoices.length,
           cashExpenses,
-          netResult,totalCost
+          netResult,totalCost,netmaya
       };
   }, [invoices, transactions, startDate, endDate, activeTab]);
 
@@ -483,6 +483,10 @@ const totalStockValue = useMemo(() => {
                     </div>
                   <div className="text-right">
                         <p className="text-4xl font-extrabold">{settings.currency}{summaryData.totalCost.toFixed(2)}</p>
+                    </div>
+
+                  <div className="text-right">
+                        <p className="text-4xl font-extrabold">{settings.currency}{summaryData.netmaya.toFixed(2)}</p>
                     </div>
                  
                 </div>
