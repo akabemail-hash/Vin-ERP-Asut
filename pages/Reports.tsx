@@ -139,7 +139,7 @@ salesInvoices.forEach(inv => {
           totalPurchases, purchCash, purchCard, purchCredit,
           totalPurchReturn, countPurch: purchaseInvoices.length,
           cashExpenses,
-          netResult
+          netResult,totalCost
       };
   }, [invoices, transactions, startDate, endDate, activeTab]);
 
@@ -481,6 +481,10 @@ const totalStockValue = useMemo(() => {
                     <div className="text-right">
                         <p className="text-4xl font-extrabold">{settings.currency}{summaryData.netResult.toFixed(2)}</p>
                     </div>
+                  <div className="text-right">
+                        <p className="text-4xl font-extrabold">{settings.currency}{summaryData.totalCost.toFixed(2)}</p>
+                    </div>
+                 
                 </div>
             </div>
         )}
