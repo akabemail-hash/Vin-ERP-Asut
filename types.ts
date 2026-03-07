@@ -175,6 +175,7 @@ export interface InvoiceItem {
   price: number;
   total: number;
   returnedQuantity: number; 
+  purchasePrice?: number;
  
 }
 
