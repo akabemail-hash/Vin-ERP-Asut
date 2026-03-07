@@ -44,6 +44,27 @@ const [stockSearch, setStockSearch] = useState('');
 
   // 0. SUMMARY REPORT DATA
   const summaryData = useMemo(() => {
+
+    const summaryItems: InvoiceSummaryItem[] = useMemo(() => {
+  if (activeTab !== 'summary') return [];
+
+  const dateCheck = (date: string) => date >= startDate && date <= endDate + 'T23:59:59';
+
+  const salesInvoices = invoices.filter(i => i.type === 'SALE' && dateCheck(i.date));
+
+  // Her invoice item'ını InvoiceItem2 gibi map ediyoruz
+  return salesInvoices.flatMap(inv =>
+    inv.items.map(item => ({
+      productId: item.productId,
+      productName: item.productName,
+      quantity: item.quantity,
+      price: item.price,
+      total: item.total,
+      returnedQuantity: item.returnedQuantity || 0,
+      purchasePrice: item.purchasePrice || 0
+    }))
+  );
+}, [invoices, startDate, endDate, activeTab]);
     if (activeTab !== 'summary') return null;
 
     const dateCheck = (date: string) => date >= startDate && date <= endDate + 'T23:59:59';
