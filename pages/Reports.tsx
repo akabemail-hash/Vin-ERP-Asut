@@ -44,83 +44,102 @@ const [stockSearch, setStockSearch] = useState('');
 
   // 0. SUMMARY REPORT DATA
   const summaryData = useMemo(() => {
-      if (activeTab !== 'summary') return null;
+    if (activeTab !== 'summary') return null;
 
-      const dateCheck = (date: string) => date >= startDate && date <= endDate + 'T23:59:59';
+    const dateCheck = (date: string) => date >= startDate && date <= endDate + 'T23:59:59';
 
-      // Sales Calculations
-      const salesInvoices = invoices.filter(i => i.type === 'SALE' && dateCheck(i.date));
-      const totalSales = salesInvoices.reduce((sum, i) => sum + i.total, 0);
-      
-      const salesCash = salesInvoices.reduce((sum, i) => {
-          if (i.paymentMethod === 'CASH') return sum + i.total;
-          if (i.paymentMethod === 'MIXED') return sum + (i.cashAmount || 0);
-          return sum;
-      }, 0);
-      
-      const salesCard = salesInvoices.reduce((sum, i) => {
-          if (i.paymentMethod === 'CARD') return sum + i.total;
-          if (i.paymentMethod === 'MIXED') return sum + (i.cardAmount || 0);
-          return sum;
-      }, 0);
+    // Sales Invoices
+    const salesInvoices = invoices.filter(i => i.type === 'SALE' && dateCheck(i.date));
+    const totalSales = salesInvoices.reduce((sum, i) => sum + i.total, 0);
 
-      const salesCredit = salesInvoices.reduce((sum, i) => {
-          if (i.paymentMethod === 'CREDIT') return sum + i.total;
-          return sum;
-      }, 0);
+    const salesCash = salesInvoices.reduce((sum, i) => {
+        if (i.paymentMethod === 'CASH') return sum + i.total;
+        if (i.paymentMethod === 'MIXED') return sum + (i.cashAmount || 0);
+        return sum;
+    }, 0);
 
-      // Sales Returns
-      const salesReturnInvoices = invoices.filter(i => i.type === 'SALE_RETURN' && dateCheck(i.date));
-      const totalSalesReturn = salesReturnInvoices.reduce((sum, i) => sum + i.total, 0);
+    const salesCard = salesInvoices.reduce((sum, i) => {
+        if (i.paymentMethod === 'CARD') return sum + i.total;
+        if (i.paymentMethod === 'MIXED') return sum + (i.cardAmount || 0);
+        return sum;
+    }, 0);
 
-      // Purchase Calculations
-      const purchaseInvoices = invoices.filter(i => i.type === 'PURCHASE' && dateCheck(i.date));
-      const totalPurchases = purchaseInvoices.reduce((sum, i) => sum + i.total, 0);
+    const salesCredit = salesInvoices.reduce((sum, i) => {
+        if (i.paymentMethod === 'CREDIT') return sum + i.total;
+        return sum;
+    }, 0);
 
-      const purchCash = purchaseInvoices.reduce((sum, i) => {
-          if (i.paymentMethod === 'CASH') return sum + i.total;
-          if (i.paymentMethod === 'MIXED') return sum + (i.cashAmount || 0);
-          return sum;
-      }, 0);
+    // SALES COST CALCULATION
+    const salesCost = salesInvoices.reduce((sum, invoice) => {
+        return sum + invoice.items.reduce((s, item) => {
+            return s + (item.quantity * (item.purchasePrice || 0));
+        }, 0);
+    }, 0);
 
-      const purchCard = purchaseInvoices.reduce((sum, i) => {
-          if (i.paymentMethod === 'CARD') return sum + i.total;
-          if (i.paymentMethod === 'MIXED') return sum + (i.cardAmount || 0);
-          return sum;
-      }, 0);
+    // Sales Returns
+    const salesReturnInvoices = invoices.filter(i => i.type === 'SALE_RETURN' && dateCheck(i.date));
+    const totalSalesReturn = salesReturnInvoices.reduce((sum, i) => sum + i.total, 0);
 
-      const purchCredit = purchaseInvoices.reduce((sum, i) => {
-          if (i.paymentMethod === 'CREDIT') return sum + i.total;
-          return sum;
-      }, 0);
+    const salesReturnCost = salesReturnInvoices.reduce((sum, invoice) => {
+        return sum + invoice.items.reduce((s, item) => {
+            return s + (item.quantity * (item.purchasePrice || 0));
+        }, 0);
+    }, 0);
 
-      // Purchase Returns
-      const purchReturnInvoices = invoices.filter(i => i.type === 'PURCHASE_RETURN' && dateCheck(i.date));
-      const totalPurchReturn = purchReturnInvoices.reduce((sum, i) => sum + i.total, 0);
+    // Purchases
+    const purchaseInvoices = invoices.filter(i => i.type === 'PURCHASE' && dateCheck(i.date));
+    const totalPurchases = purchaseInvoices.reduce((sum, i) => sum + i.total, 0);
 
-      // Cash Register Expenses (Not tied to invoices, e.g., rent, supplies)
-      const cashExpenses = transactions
-          .filter(t => t.type === 'EXPENSE' && t.source === 'CASH_REGISTER' && dateCheck(t.date) && !t.relatedInvoiceId)
-          .reduce((sum, t) => sum + t.amount, 0);
+    const purchCash = purchaseInvoices.reduce((sum, i) => {
+        if (i.paymentMethod === 'CASH') return sum + i.total;
+        if (i.paymentMethod === 'MIXED') return sum + (i.cashAmount || 0);
+        return sum;
+    }, 0);
 
-      // Overall Net Calculation
-      // Income = Sales - Sales Returns
-      // Expenses = Purchases - Purchase Returns + General Expenses
-      const netSales = totalSales - totalSalesReturn;
-      const netPurchases = totalPurchases - totalPurchReturn;
-      const totalExpenses = netPurchases + cashExpenses;
-      
-      const netResult = netSales - totalExpenses;
+    const purchCard = purchaseInvoices.reduce((sum, i) => {
+        if (i.paymentMethod === 'CARD') return sum + i.total;
+        if (i.paymentMethod === 'MIXED') return sum + (i.cardAmount || 0);
+        return sum;
+    }, 0);
 
-      return {
-          totalSales, salesCash, salesCard, salesCredit,
-          totalSalesReturn, countSales: salesInvoices.length, countReturns: salesReturnInvoices.length,
-          totalPurchases, purchCash, purchCard, purchCredit,
-          totalPurchReturn, countPurch: purchaseInvoices.length,
-          cashExpenses,
-          netResult
-      };
-  }, [invoices, transactions, startDate, endDate, activeTab]);
+    const purchCredit = purchaseInvoices.reduce((sum, i) => {
+        if (i.paymentMethod === 'CREDIT') return sum + i.total;
+        return sum;
+    }, 0);
+
+    // Purchase Returns
+    const purchReturnInvoices = invoices.filter(i => i.type === 'PURCHASE_RETURN' && dateCheck(i.date));
+    const totalPurchReturn = purchReturnInvoices.reduce((sum, i) => sum + i.total, 0);
+
+    // Cash Expenses
+    const cashExpenses = transactions
+        .filter(t => t.type === 'EXPENSE' && t.source === 'CASH_REGISTER' && dateCheck(t.date) && !t.relatedInvoiceId)
+        .reduce((sum, t) => sum + t.amount, 0);
+
+    // Net Calculation (Income = Sales - Sales Return)
+    const netSales = totalSales - totalSalesReturn;
+    const netSalesCost = salesCost - salesReturnCost;
+
+    const netPurchases = totalPurchases - totalPurchReturn;
+    const totalExpenses = netPurchases + cashExpenses;
+
+    const netResult = netSales - totalExpenses - netSalesCost; // net profit/loss after cost
+
+    const grossProfit = netSales - netSalesCost;
+    const profitability = grossProfit / netSales * 100 || 0; // % kar
+
+    return {
+        totalSales, salesCash, salesCard, salesCredit,
+        totalSalesReturn, countSales: salesInvoices.length, countReturns: salesReturnInvoices.length,
+        totalPurchases, purchCash, purchCard, purchCredit,
+        totalPurchReturn, countPurch: purchaseInvoices.length,
+        cashExpenses,
+        netResult,
+        netSalesCost,
+        grossProfit,
+        profitability
+    };
+}, [invoices, transactions, startDate, endDate, activeTab]);
 
   // 1. STOCK REPORT
 const stockReportData = useMemo(() => {
@@ -392,6 +411,23 @@ const totalStockValue = useMemo(() => {
                             <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{t('credit')}</p>
                             <p className="text-xl font-bold text-gray-700 dark:text-gray-200">{settings.currency}{summaryData.salesCredit.toFixed(2)}</p>
                         </div>
+
+                      {/* GROSS PROFIT SUMMARY */}
+<div className="grid grid-cols-3 gap-4 mt-6">
+    <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg text-center">
+        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{t('totalSales')}</p>
+        <p className="text-2xl font-bold text-gray-900 dark:text-white">{settings.currency}{summaryData.totalSales.toFixed(2)}</p>
+    </div>
+    <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg text-center">
+        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{t('totalCost')}</p>
+        <p className="text-2xl font-bold text-red-600 dark:text-red-400">{settings.currency}{summaryData.netSalesCost.toFixed(2)}</p>
+    </div>
+    <div className="p-4 bg-gray-50 dark:bg-gray-700/30 rounded-lg text-center">
+        <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">{t('grossProfit')}</p>
+        <p className="text-2xl font-bold text-green-600 dark:text-green-400">{settings.currency}{summaryData.grossProfit.toFixed(2)}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">({summaryData.profitability.toFixed(2)}%)</p>
+    </div>
+</div>
                     </div>
                 </div>
 
