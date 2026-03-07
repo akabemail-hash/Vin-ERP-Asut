@@ -52,25 +52,24 @@ const [stockSearch, setStockSearch] = useState('');
       const salesInvoices = invoices.filter(i => i.type === 'SALE' && dateCheck(i.date));
       const totalSales = salesInvoices.reduce((sum, i) => sum + i.total, 0);
 
- // --- SATILAN ÜRÜNLERİN MALİYETİ (Cost of Goods Sold - COGS) ---
     let totalCost = 0;
-    salesInvoices.forEach(inv => {
-        inv.items.forEach((item: any) => {
-            const product = products.find(p => p.id === item.productId);
-            if (!product) return;
-            
-            // Son alış fiyatı: invoice type PURCHASE veya product.purchasePrice
-            // Önce invoices içinden ürünün son alış fiyatını bul
-            const lastPurchase = invoices
-                .filter(inv => inv.type === 'PURCHASE')
-                .flatMap(inv => inv.items)
-                .filter(i => i.productId === item.productId)
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
-            const unitCost = lastPurchase?.price || product.purchasePrice || 0;
-            totalCost += unitCost * item.quantity;
-        });
+salesInvoices.forEach(inv => {
+    inv.items.forEach((item: any) => {
+        const product = products.find(p => p.id === item.productId);
+        if (!product) return;
+
+        // Son alış fiyatı: önce PURCHASE faturalarından, yoksa ürün tablosundan
+        const lastPurchaseItem = invoices
+            .filter(i => i.type === 'PURCHASE') // sadece alış faturaları
+            .flatMap(i => i.items.map(it => ({ ...it, invoiceDate: i.date }))) // item + invoice tarihi
+            .filter(i => i.productId === item.productId)
+            .sort((a, b) => new Date(b.invoiceDate).getTime() - new Date(a.invoiceDate).getTime())[0];
+
+        const unitCost = lastPurchaseItem?.price || product.purchasePrice || 0;
+        totalCost += unitCost * item.quantity;
     });
+});
 
 
     
