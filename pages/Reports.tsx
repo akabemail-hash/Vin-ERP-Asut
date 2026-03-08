@@ -531,22 +531,45 @@ const totalStockValue = useMemo(() => {
                                  <th className="p-4">{t('stockValueSell')}</th>
                              </tr>
                          </thead>
-                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                             {paginatedData.map((p: any) => {
-                                 const stock = selectedLocation ? (p.stocks?.[selectedLocation] || 0) : p.stock;
-                                 const valBuy = realStock * p.purchasePrice;
-                                 const valSell = realStock * p.salesPrice;
-                                 return (
-                                     <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                         <td className="p-4 dark:text-gray-200">{p.name} <span className="text-xs text-gray-400 block">{p.code}</span></td>
-                                         <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{categories.find((c: any) => c.id === p.categoryId)?.name}</td>
-                                         <td className="p-4 font-bold">{realStock}</td>
-                                         <td className="p-4 text-sm">{settings.currency}{valBuy.toFixed(2)}</td>
-                                         <td className="p-4 text-sm font-bold text-green-600">{settings.currency}{valSell.toFixed(2)}</td>
-                                     </tr>
-                                 );
-                             })}
-                         </tbody>
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+  {paginatedData.map((p: any) => {
+      const stockLocation = selectedLocation ? (p.stocks?.[selectedLocation] || 0) : p.stock;
+
+      // Alış faturaları
+      const purchaseQty = invoices
+          .filter(i => i.type === 'PURCHASE' && i.items.some(it => it.productId === p.id))
+          .flatMap(i => i.items)
+          .filter(it => it.productId === p.id)
+          .reduce((sum, it) => sum + it.quantity, 0);
+
+      // Satış faturaları
+      const saleQty = invoices
+          .filter(i => i.type === 'SALE' && i.items.some(it => it.productId === p.id))
+          .flatMap(i => i.items)
+          .filter(it => it.productId === p.id)
+          .reduce((sum, it) => sum + it.quantity, 0);
+
+      // Gerçek stok
+      const realStock = stockLocation + purchaseQty - saleQty;
+
+      const valBuy = realStock * p.purchasePrice;
+      const valSell = realStock * p.salesPrice;
+
+      return (
+          <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+              <td className="p-4 dark:text-gray-200">
+                  {p.name} <span className="text-xs text-gray-400 block">{p.code}</span>
+              </td>
+              <td className="p-4 text-sm text-gray-600 dark:text-gray-400">
+                  {categories.find((c: any) => c.id === p.categoryId)?.name}
+              </td>
+              <td className="p-4 font-bold">{realStock}</td>
+              <td className="p-4 text-sm">{settings.currency}{valBuy.toFixed(2)}</td>
+              <td className="p-4 text-sm font-bold text-green-600">{settings.currency}{valSell.toFixed(2)}</td>
+          </tr>
+      );
+  })}
+</tbody>
                      </table>
                  )}
 
