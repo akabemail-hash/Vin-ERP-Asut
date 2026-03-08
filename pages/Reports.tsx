@@ -534,13 +534,13 @@ const totalStockValue = useMemo(() => {
                          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                              {paginatedData.map((p: any) => {
                                  const stock = selectedLocation ? (p.stocks?.[selectedLocation] || 0) : p.stock;
-                                 const valBuy = stock * p.purchasePrice;
-                                 const valSell = stock * p.salesPrice;
+                                 const valBuy = realStock * p.purchasePrice;
+                                 const valSell = realStock * p.salesPrice;
                                  return (
                                      <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                          <td className="p-4 dark:text-gray-200">{p.name} <span className="text-xs text-gray-400 block">{p.code}</span></td>
                                          <td className="p-4 text-sm text-gray-600 dark:text-gray-400">{categories.find((c: any) => c.id === p.categoryId)?.name}</td>
-                                         <td className="p-4 font-bold">{stock}</td>
+                                         <td className="p-4 font-bold">{realStock}</td>
                                          <td className="p-4 text-sm">{settings.currency}{valBuy.toFixed(2)}</td>
                                          <td className="p-4 text-sm font-bold text-green-600">{settings.currency}{valSell.toFixed(2)}</td>
                                      </tr>
