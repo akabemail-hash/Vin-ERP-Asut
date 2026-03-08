@@ -144,26 +144,48 @@ salesInvoices.forEach(inv => {
   }, [invoices, transactions, startDate, endDate, activeTab]);
 
   // 1. STOCK REPORT
-  const stockReportData = useMemo(() => {
-    return products.filter(p => {
-        // Location filter
-        const locationMatch = selectedLocation ? (p.stocks?.[selectedLocation] || 0) > 0 : true;
+// 1. STOCK REPORT (Güncellenmiş)
+const stockReportData = useMemo(() => {
+    return products.map(p => {
+        const stockLocation = selectedLocation ? (p.stocks?.[selectedLocation] || 0) : p.stock;
 
-        // Search filter: name or barcode
+        // Alış ve satış faturalarından miktarları hesapla
+        const purchaseQty = invoices
+            .filter(i => i.type === 'PURCHASE' && i.items.some(it => it.productId === p.id))
+            .flatMap(i => i.items)
+            .filter(it => it.productId === p.id)
+            .reduce((sum, it) => sum + it.quantity, 0);
+
+        const saleQty = invoices
+            .filter(i => i.type === 'SALE' && i.items.some(it => it.productId === p.id))
+            .flatMap(i => i.items)
+            .filter(it => it.productId === p.id)
+            .reduce((sum, it) => sum + it.quantity, 0);
+
+        const realStock = stockLocation + purchaseQty - saleQty;
+
+        return {
+            ...p,
+            realStock
+        };
+    }).filter(p => {
+        // Arama ve lokasyon filtresi
         const searchLower = stockSearch.toLowerCase();
         const searchMatch = !stockSearch || p.name.toLowerCase().includes(searchLower) || p.code.toLowerCase().includes(searchLower);
 
-        return locationMatch && searchMatch;
+        const locationMatch = selectedLocation ? (p.realStock > 0) : true;
+
+        return searchMatch && locationMatch;
     });
-}, [products, selectedLocation, stockSearch]);
+}, [products, invoices, selectedLocation, stockSearch]);
 
   // STOCK TOTAL VALUE
 const totalStockValue = useMemo(() => {
     return stockReportData.reduce((sum, p: any) => {
-        const stock = selectedLocation ? (p.stocks?.[selectedLocation] || 0) : p.stock;
-        return sum + (stock * p.purchasePrice);
+        return sum + (p.realStock * p.purchasePrice);
     }, 0);
-}, [stockReportData, selectedLocation]);
+}, [stockReportData]);
+  
   // 2. INVOICE REPORTS (Sales, Purchase, Returns)
   const invoiceReportData = useMemo(() => {
      let type = '';
